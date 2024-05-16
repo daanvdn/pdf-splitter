@@ -1,0 +1,29 @@
+name: Build and Publish Artifact
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Setup PowerShell
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Run build script
+      run: |
+        pwsh -File build.ps1
+
+    - name: Publish artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: artifact
+        path: dist/bin/rest_api.exe
