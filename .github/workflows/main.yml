@@ -67,4 +67,4 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: PDFSplitter
-        path: release/PDF\ Splitter\ 1.0.0.msi
+        path: release/PDF Splitter 1.0.0.msi
