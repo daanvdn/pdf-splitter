@@ -66,5 +66,5 @@ jobs:
     - name: Publish artifact
       uses: actions/upload-artifact@v2
       with:
-        name: artifact
-        path: dist/bin/rest_api.exe
+        name: PDFSplitter
+        path: release/PDF\ Splitter\ 1.0.0.msi
