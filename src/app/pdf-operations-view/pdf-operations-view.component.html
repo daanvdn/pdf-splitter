@@ -1,14 +1,11 @@
-<div *ngIf="originalPdfPath" style="height: 96vh; width: 28vw;; border: black 1px solid; padding-left: 5px">
+<div *ngIf="originalPdfPath && outputDirectory" style="height: 96vh; width: 28vw;; border: black 1px solid; padding-left: 5px">
     <div>
         <div #a style="display: grid; grid-template-columns: auto; width: 100%;margin-top: 5px">
             <div style="text-align: start">
                 <span style="; text-decoration: underline;">Output directory</span>
-                <button style="margin-left: 10px" (click)="handleOutputDirButtonClick()">
-                    <fa-icon [fixedWidth]="true" [icon]="faFolder"></fa-icon>
-                </button>
             </div>
         </div>
-        <div style="align-self: flex-start; font-size: smaller; padding-top: 5px" #b>{{ outputDirectory }}</div>
+        <div style="align-self: flex-start; font-size: smaller; padding-top: 5px" #b>{{ getNormalizedOutputPath() }}</div>
     </div>
     <div style="padding-top: 30px">
         <div>current page: {{ currentPage === undefined || currentPage === null ? 'undefined' : currentPage }}</div>
@@ -24,10 +21,10 @@
                   style="font-style: italic; font-size: smaller; padding-left: 10px">Split off pages 1 to {{ currentPage - 1 }}</span>
         </ng-template>
     </div>
-    <div *ngIf="splitFileNames.length >0" style="padding-top: 30px">
+    <div *ngIf="splitFiles.length >0" style="padding-top: 30px">
         <div style="text-align: start; text-decoration: underline;">Split Files</div>
         <ul>
-            <li style="font-size: smaller; font-style: italic" *ngFor="let item of splitFileNames">
+            <li style="font-size: smaller; font-style: italic" *ngFor="let item of splitFiles">
                 {{ item }}
             </li>
         </ul>

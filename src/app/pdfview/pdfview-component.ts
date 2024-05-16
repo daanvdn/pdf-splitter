@@ -1,5 +1,4 @@
 import {
-
     ChangeDetectorRef,
     Component,
     ComponentFactoryResolver,
@@ -42,6 +41,13 @@ export class PDFViewComponent implements OnInit {
         if (this.electronService.isElectron) {
             this.electron = window.require ? window.require('electron') : null;
         }
+
+        this.appService.page$.subscribe((page) => {
+            if (page) {
+                this.page = page;
+            }
+
+        });
     }
 
 
@@ -62,6 +68,16 @@ export class PDFViewComponent implements OnInit {
 
     }
 
+    getNormalizedOutputPath() {
+        if (this.outputDirectory) {
+
+            return this.outputDirectory.replace("file:///", "");
+        }
+
+        return '';
+
+    }
+
     ngOnInit(): void {
         if (this.electron) {
 
@@ -70,7 +86,6 @@ export class PDFViewComponent implements OnInit {
                     if (path) {
                         this.pdfPath = this.electronService.isElectron ? this.electronService.pathToFileURL(
                             path) : path;
-                        //copy pdf path to new variable
                         this.appService.setOriginalPdf(this.pdfPath);
                         this.remainderPath = this.pdfPath;
                         this.remainderPathWithTimestamp = this.remainderPath;
@@ -79,6 +94,20 @@ export class PDFViewComponent implements OnInit {
                     }
                 });
             });
+            this.electron.ipcRenderer.on('output-path', (event: any, path: string | null) => {
+                this.ngZone.run(() => {
+                    if (path) {
+                        // this.outputDirectory = this.electronService.isElectron ?
+                        // this.electronService.pathToFileURL(path) : path;
+                        this.outputDirectory = path;
+                        this.appService.setOutputDirectory(this.outputDirectory);
+
+
+                    }
+                });
+            });
+
+
         }
         this.appService.remainderPath$.subscribe((path) => {
             if (path) {
@@ -122,58 +151,8 @@ export class PDFViewComponent implements OnInit {
         this.appService.setPage(this.page);
     }
 
-    handlePageChange($event: number) {
-        this.appService.setPage($event);
-    }
-
-    loadPdfViewerComponent() {
-        const componentFactory = this.componentFactoryResolver.resolveComponentFactory(PdfViewerComponent);
-        const componentRef = this.container.createComponent(componentFactory, 0);
-
-        // Pass necessary data to the component instance
-        componentRef.instance.src = this.remainderPath;
-        componentRef.instance.afterLoadComplete.subscribe((pdfData: any) => {
-            this.afterLoadComplete(pdfData);
-        });
-        componentRef.instance.page = this.page;
-        componentRef.instance.renderText = true;
-        componentRef.instance.showAll = false;
-        componentRef.instance.fitToPage = true;
-        componentRef.instance.pageChange.subscribe((page: number) => {
-            this.handlePageChange(page);
-        });
-
-        // Set the reference to the dynamic PDF viewer component
-        this.pdfViewerRef = componentRef.instance;
-
-        // Use Angular ChangeDetectorRef to detect changes after adding the component
-        this.cdr.detectChanges();
-    }
 
 
-    loadPdfViewerComponent0() {
-        const componentFactory = this.componentFactoryResolver.resolveComponentFactory(PdfViewerComponent);
-        const componentRef = this.container.createComponent(componentFactory, 0);
-        // If you want to set the [src] input of the pdf-viewer, you can do it like this:
-        componentRef.instance.src = this.remainderPath;
-        this.page = 1;
-        componentRef.instance.afterLoadComplete.subscribe((pdfData: any) => {
-            this.afterLoadComplete(pdfData);
-        });
-        componentRef.instance.page = this.page;
-        componentRef.instance.renderText = true;
-        componentRef.instance.showAll = false;
-        componentRef.instance.fitToPage = true;
-        componentRef.instance.pageChange.subscribe((page: number) => {
-            this.handlePageChange(page);
-        });
-        this.cdr.detectChanges();
-        //How do I make the template aware of the new componentRef?
-
-
-
-
-    }
 
     protected readonly faArrowRight = faArrowRight;
     protected readonly faArrowLeft = faArrowLeft;

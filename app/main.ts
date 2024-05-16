@@ -1,17 +1,19 @@
-import { app, BrowserWindow, dialog, Menu, MenuItem, screen } from 'electron';
+import {app, BrowserWindow, dialog, Menu, MenuItem, screen} from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import {ChildProcess, ChildProcessWithoutNullStreams, exec, spawn} from 'node:child_process';
+import {exec} from 'node:child_process';
 import log from 'electron-log/main';
-import {SpawnOptions} from "child_process";
 
-const { ipcMain } = require('electron');
+const {ipcMain} = require('electron');
 const isDev = require('electron-is-dev');
+const Store = require('electron-store');
+
 
 log.initialize();
+const store = new Store();
 
 let win: BrowserWindow | null = null;
-let childProcessIsSpawned: boolean=false; // Declare childProcess variable outside the function scope
+let childProcessIsSpawned: boolean = false; // Declare childProcess variable outside the function scope
 let windowCreated = false; // Flag to track if window has been created
 
 const args = process.argv.slice(1),
@@ -40,23 +42,41 @@ function createWindow(): BrowserWindow {
         },
         title: 'PDF Splitter',
     });
-    const defaultMenu = Menu.getApplicationMenu();
+    const defaultMenu = Menu.getApplicationMenu() as Electron.Menu;
+
 
     // Find the 'File' menu by label
-    const fileMenu = defaultMenu?.items.find((item) => item.label === 'File');
+    const fileMenu = defaultMenu?.items.find((item) => item.label === 'File') as Electron.MenuItem;
+
 
     // Append 'Open' menu item to the 'File' menu
-    if (fileMenu) {
-        fileMenu.submenu?.insert(0,
-            new MenuItem({
+    fileMenu.submenu?.insert(0,
+        new MenuItem({
+            label: 'Open',
+            accelerator: 'CmdOrCtrl+O',
+            click: () => {
+                openFileDialog();
+            },
+        })
+    );
+
+
+    const outputMenu = new MenuItem({
+        label: 'Output',
+        submenu: [
+            {
                 label: 'Open',
-                accelerator: 'CmdOrCtrl+O',
+                accelerator: 'CmdOrCtrl+D',
                 click: () => {
-                    openFileDialog();
+                    openOutputDirDialog();
                 },
-            })
-        );
-    }
+            }
+        ]
+    })
+    defaultMenu.insert(1, outputMenu);
+
+
+
     Menu.setApplicationMenu(defaultMenu);
 
     if (!serve) {
@@ -70,21 +90,11 @@ function createWindow(): BrowserWindow {
 
         const url = new URL(path.join('file:', __dirname, pathIndex));
         win.loadURL(url.href);
-    } else {
+    }
+    else {
         win.loadURL('http://localhost:4200');
     }
 
-    /*if (!isDev && !childProcessIsSpawned) {
-        const exePath = path.join(__dirname, '..', '..', 'rest_api.exe');
-        let options : SpawnOptions = {
-            detached: false,
-            shell: false,
-            windowsHide: true };
-        childProcess = spawn(exePath, [], options); // Detached mode, no
-        childProcessIsSpawned = true;
-        childProcess.unref(); // Allow the parent process to exit independently of the child process
-        log.info(`rest_api.exe spawned with options ${JSON.stringify(options)}`);
-    }*/
     if (!isDev && !childProcessIsSpawned) {
         // Define the PowerShell command
         const exePath = path.join(__dirname, '..', '..', 'rest_api.exe');
@@ -121,14 +131,104 @@ function createWindow(): BrowserWindow {
     return win;
 }
 
-function openFileDialog() {
+function openFileDialog(): void {
     const files = dialog.showOpenDialogSync(win!, {
         properties: ['openFile'],
-        filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
+        filters: [{name: 'PDF Files', extensions: ['pdf']}],
     });
     if (files && files.length > 0) {
-        win?.webContents.send('pdf-path', files[0]);
+        let file = files[0];
+        addFileToRecent(file);
+        win?.webContents.send('pdf-path', file);
     }
+}
+
+function openOutputDirDialog(): void {
+    const files = dialog.showOpenDialogSync(win!, {
+        properties: ['openDirectory'],
+    });
+    if (files && files.length == 1) {
+        let file = files[0];
+        addOutputDirToLast(file);
+        win?.webContents.send('output-path', file);
+    }
+}
+
+// Update the file menu with the recent files
+function updateFileMenu() {
+    const recentFiles: string[] = getRecentFiles();
+    const defaultMenu = Menu.getApplicationMenu();
+    const fileMenu = defaultMenu?.items.find((item) => item.label === 'File');
+
+    if (fileMenu && recentFiles.length > 0) {
+        // Remove all existing recent file menu items
+
+        fileMenu.submenu?.append(new MenuItem({type: 'separator'}));
+
+        // Add new menu items for each recent file
+        recentFiles.forEach((file, index) => {
+            fileMenu.submenu?.append(
+                new MenuItem({
+                    label: `Recent - ${file}`,
+                    click: () => {
+                        win?.webContents.send('pdf-path', file);
+                    },
+                })
+            );
+        });
+
+        Menu.setApplicationMenu(defaultMenu);
+    }
+}
+
+function updateOutputMenu() {
+    const lastOutputDir: string | null = getLastOutputDir();
+    const defaultMenu = Menu.getApplicationMenu();
+    const outputMenu = defaultMenu?.items.find((item) => item.label === 'Output');
+
+    if (outputMenu && lastOutputDir) {
+        // Remove all existing recent file menu items
+
+        outputMenu.submenu?.append(new MenuItem({type: 'separator'}));
+        outputMenu.submenu?.append(
+            new MenuItem({
+                label: `Last - ${lastOutputDir}`,
+                click: () => {
+                    win?.webContents.send('output-path', lastOutputDir);
+                },
+            })
+
+        );
+
+        Menu.setApplicationMenu(defaultMenu);
+    }
+}
+
+
+// Add a file to the recently opened files list
+function addFileToRecent(filePath: string) {
+    let recentFiles = store.get('recentFiles', []);
+    if (!recentFiles.includes(filePath)) {
+        recentFiles.push(filePath);
+        // Only keep the last 10 items
+        if (recentFiles.length > 10) {
+            recentFiles.shift();
+        }
+        store.set('recentFiles', recentFiles);
+    }
+}
+
+function addOutputDirToLast(filePath: string) {
+    store.set('lastOutputDirectory', filePath);
+}
+
+// Get the list of recently opened files
+function getRecentFiles(): string[] {
+    return store.get('recentFiles', []);
+}
+
+function getLastOutputDir(): string | null {
+    return store.get('lastOutputDirectory', null);
 }
 
 try {
@@ -145,7 +245,11 @@ try {
         });
     });
 
-    app.on('ready', () => setTimeout(createWindow, 400));
+    app.on('ready', () => setTimeout(() => {
+        createWindow();
+        updateFileMenu();
+        updateOutputMenu();
+    }, 400));
 
     app.on('window-all-closed', () => {
         if (process.platform !== 'darwin') {

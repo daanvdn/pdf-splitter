@@ -33,7 +33,7 @@ if ((conda env list) -match 'pdfsplitter_rest_api') {
 } else {
     Write-Host "Environment 'pdfsplitter_rest_api' does not exist. Creating..."
     # Create conda environment from conda_environment.yml
-    conda env create --file src/conda_environment.yml
+    conda env create --file conda_environment.yml
 }
 
 # Activate conda environment

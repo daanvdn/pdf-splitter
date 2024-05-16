@@ -10,14 +10,13 @@ import {ElectronService} from "../core/services";
 })
 export class PdfOperationsViewComponent implements OnInit {
 
-    faFolder = faFolder;
     originalPdfPath!: string;
     outputDirectory: string | null = null;
     remainderPdfPath!: string;
     initialized = false;
     currentPage: number | null = null;
     totalPages: number | null = null;
-    splitFileNames: string[] = [];
+    splitFiles: string[] = [];
 
 
     constructor(private appService: AppService, private electronService: ElectronService, private ngZone: NgZone) {
@@ -49,13 +48,22 @@ export class PdfOperationsViewComponent implements OnInit {
             }
 
         });
-        this.appService.splitFileNames$.subscribe((splitFileNames) => {
+        this.appService.splitFiles$.subscribe((splitFileNames) => {
 
-            this.splitFileNames = splitFileNames;
+            this.splitFiles = splitFileNames;
         });
 
     }
 
+    getNormalizedOutputPath() {
+        if (this.outputDirectory) {
+
+            return this.outputDirectory.replace("file:///", "");
+        }
+
+        return '';
+
+    }
 
     onClickCut() {
 
@@ -66,23 +74,10 @@ export class PdfOperationsViewComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        this.electronService.ipcRenderer.on('selected-directory', (event, path) => {
-            this.appService.setOutputDirectory(path);
 
-        });
     }
 
     protected readonly event = event;
-
-    handleOutputDirButtonClick() {
-        this.electronService.ipcRenderer.send('open-file-dialog');
-        this.electronService.ipcRenderer.once('selected-directory', (event, path) => {
-            this.ngZone.run(() => {
-                this.outputDirectory = path;
-            });
-        });
-
-    }
 
     cutButtonIsDisabled() {
 
@@ -90,8 +85,5 @@ export class PdfOperationsViewComponent implements OnInit {
         return disabled;
     }
 
-    showSplitOffMessage(): boolean {
-        let show = this.currentPage !== null && this.currentPage > 1;
-        return show;
-    }
+
 }

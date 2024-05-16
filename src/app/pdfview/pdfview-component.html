@@ -1,6 +1,6 @@
 <!--<div style="border: black 1px solid; height: 96vh;display: flex; justify-content: center; align-items: center;">-->
 <div style="height: 96vh; width: 98%">
-    <div *ngIf="pdfPath; else selectOutputDirectory">
+    <div *ngIf="pdfPath && outputDirectory; else selectPdfAndOutput">
         <div style="padding: 10px">
             <span style="font-weight: bold; padding-right: 5px">Original PDF:</span><span style="font-style: italic">{{getNormalizedPdfPath()}}</span>
         </div>
@@ -15,17 +15,6 @@
                 <fa-icon style="justify-content: center" [fixedWidth]="true" [icon]="faArrowRight"></fa-icon>
             </button>
         </div>
-
-<!--        <div #pdfContainer>
-            <pdf-viewer style="height: 90vh; width: 70vw;" [src]="remainderPath" [render-text]="true"
-                        [show-all]="false"
-                        [fit-to-page]="true"
-                        [page]="page"
-                        (after-load-complete)="afterLoadComplete($event)"
-
-            ></pdf-viewer>
-        </div>-->
-
         <div>
             <pdf-viewer
                     style="height: 90vh; width: 70vw;"
@@ -39,9 +28,20 @@
         </div>
 
     </div>
-    <ng-template #selectOutputDirectory>
+    <ng-template #selectPdfAndOutput>
         <div style="display: grid; grid-template-columns: auto; width: 100%;padding: 10px;">
-            <div style="font-style: italic">Please select a file under <span style="font-weight: bold">File > Open</span> or use <span  style="font-weight: bold"> Ctrl+O</span> !</div>
+            <div *ngIf="!pdfPath else pdfPathIsSelected" style="font-style: italic">Please select a file under <span
+                    style="font-weight: bold">File > Open</span> or use <span style="font-weight: bold"> Ctrl+O</span>!
+            </div>
+            <ng-template #pdfPathIsSelected>
+                <div style="font-style: italic">Selected pdf <span style="color: green; font-weight: bold">{{ getNormalizedPdfPath() }}</span></div>
+            </ng-template>
+            <div *ngIf="(outputDirectory === undefined ||outputDirectory === null)  else outputDirectoryIsSelected" style="font-style: italic; padding-top: 10px">Please select an output folder under <span
+                    style="font-weight: bold">Output > Open</span> or use <span style="font-weight: bold"> Ctrl+D</span>!
+            </div>
+            <ng-template #outputDirectoryIsSelected>
+                <div style="font-style: italic; padding-top: 10px">Selected output directory <span style="color: green; font-weight: bold">{{ getNormalizedOutputPath() }}</span></div>
+            </ng-template>
 
         </div>
 

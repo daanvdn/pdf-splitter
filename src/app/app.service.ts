@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {BehaviorSubject, Observable} from "rxjs";
-import {RemainderRequest, SplitRequest, SplitResponse} from "./model";
+import {RemainderRequest, RemainderResponse, SplitRequest, SplitResponse} from "./model";
 import {HttpClient, HttpHeaders} from "@angular/common/http";
 
 //import Store from "electron-store";
@@ -32,8 +32,8 @@ export class AppService {
     private reloadRemainder = new BehaviorSubject<boolean | null>(null);
     reloadRemainder$ = this.reloadRemainder.asObservable();
 
-    private splitFileNames = new BehaviorSubject<string[]>([]);
-    splitFileNames$ = this.splitFileNames.asObservable();
+    private splitFiles = new BehaviorSubject<string[]>([]);
+    splitFiles$ = this.splitFiles.asObservable();
 
 
     constructor(private http: HttpClient) {
@@ -47,12 +47,20 @@ export class AppService {
         this.originalPdf.next(pdfPath);
         this.page.next(1);
         this.totalPages.next(null);
-        this.splitFileNames.next([]);
+        this.splitFiles.next([]);
         this.outputDir$.subscribe(outputDir => {
             if (outputDir && pdfPath) {
-                this.getRemainderFilePath(pdfPath).subscribe(remainder => {
-                    this.remainderPath.next(remainder);
+                this.getRemainderFilePath(pdfPath).subscribe(response => {
+                    this.remainderPath.next(response.remainder_file_path);
                     this.reloadRemainder.next(true);
+                    if(response.split_files && response.split_files.length > 0) {
+
+                        this.splitFiles.next([response.remainder_file_name,...response.split_files]);
+                        this.splitSoFar.next(response.split_files.length);
+                    } else {
+                        this.splitFiles.next([]);
+                        this.splitSoFar.next(0);
+                    }
                 });
             }
         });
@@ -63,7 +71,7 @@ export class AppService {
         this.page.next(page);
     }
 
-    private getRemainderFilePath(originalFilePath: string): Observable<string> {
+    private getRemainderFilePath(originalFilePath: string): Observable<RemainderResponse> {
         const outputDir = this.outputDir.getValue() as string;
         const request: RemainderRequest = {
             original_file: originalFilePath,
@@ -75,7 +83,7 @@ export class AppService {
         const body = JSON.stringify(request);
 
 
-        return this.http.post<string>('http://localhost:8090/remainder_file_path', body, options);
+        return this.http.post<RemainderResponse>('http://localhost:8090/remainder_file_path', body, options);
     }
 
     public splitPdf(): Observable<SplitResponse> {
@@ -91,14 +99,14 @@ export class AppService {
 
 
     handleSplitResponse(splitResponse: SplitResponse) {
+        this.page.next(1);
         this.splitSoFar.next(splitResponse.splits_so_far);
-        const value: string[] = this.splitFileNames.getValue();
+        const value: string[] = this.splitFiles.getValue();
         if (!value.includes(splitResponse.remainder_file_name)) {
             value.push(splitResponse.remainder_file_name);
         }
         value.push(splitResponse.split_file_name);
-        this.splitFileNames.next(value);
-
+        this.splitFiles.next(value);
         this.reloadRemainder.next(true);
 
     }

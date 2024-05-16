@@ -1,6 +1,7 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
+    "inlineSources": true,
     "strict": true,
     "outDir": "./dist/out-tsc",
     "module": "es2022",
@@ -36,6 +37,7 @@
     "skipTemplateCodegen": false,
     "preserveWhitespaces": true,
     "skipMetadataEmit": false,
-    "disableTypeScriptVersionCheck": true
+    "disableTypeScriptVersionCheck": true,
+
   }
 }

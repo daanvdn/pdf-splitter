@@ -1,6 +1,9 @@
+import traceback
+from glob import glob
+from typing import List
+
 import uvicorn
 from fastapi import FastAPI, HTTPException
-
 
 app = FastAPI()
 
@@ -37,6 +40,11 @@ class RemainderRequest(BaseModel):
     output_dir: str
 
 
+class RemainderResponse(BaseModel):
+    remainder_file_path: str
+    remainder_file_name: str
+    split_files: List[str]
+
 class SplitResponse(BaseModel):
     split_file_name: str
     remainder_file_name: str
@@ -45,15 +53,16 @@ class SplitResponse(BaseModel):
 
 class PdfSplitter:
 
-    def get_or_create_remainder_file_path(self, request: RemainderRequest):
+    def get_or_create_remainder_file_path(self, request: RemainderRequest) -> RemainderResponse:
         original_file_name = get_original_file_name(request.original_file)
         original_file_path = get_original_file_path(request.original_file)
+        split_files = self._get_split_files(request)
         remainder_file = f"{get_output_dir(request.output_dir)}{os.sep}{original_file_name}-remainder.pdf"
         if not os.path.exists(remainder_file):
             with open(original_file_path, 'rb') as file:
                 with open(remainder_file, 'wb') as file2:
                     file2.write(file.read())
-        return remainder_file
+        return RemainderResponse(remainder_file_path=remainder_file,remainder_file_name= os.path.basename(remainder_file), split_files=split_files)
 
     def _get_new_pdf_file_path(self, request: SplitRequest) -> str:
 
@@ -66,8 +75,9 @@ class PdfSplitter:
         output_dir = request.output_dir
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         request.splits_so_far += 1
-        remainder_file_path = self.get_or_create_remainder_file_path(
+        response: RemainderResponse = self.get_or_create_remainder_file_path(
             RemainderRequest(original_file=request.original_file, output_dir=output_dir))
+        remainder_file_path = response.remainder_file_path
         new_pdf_file_path = self._get_new_pdf_file_path(request)
 
         page_number = request.page_number
@@ -94,15 +104,24 @@ class PdfSplitter:
                 with open(remainder_file_path, 'wb') as file2:
                     remainder_writer.write(file2)
 
-                response = SplitResponse(split_file_name=os.path.basename(new_pdf_file_path),
+                splitResponse = SplitResponse(split_file_name=os.path.basename(new_pdf_file_path),
                                          splits_so_far=request.splits_so_far,
                                          remainder_file_name=os.path.basename(remainder_file_path))
-                return response
+                return splitResponse
 
 
             except AssertionError as e:
                 print("Error: The PDF you are cutting has less pages than you want to cut!")
 
+    def _get_split_files(self, request: RemainderRequest) -> List[str]:
+        # find all the files in the output directory with the following file name pattern f"{request.original_file}-split-*.pdf". Use glob for speed
+        # return the number of files found
+        files = glob(f"{request.output_dir}{os.sep}{get_original_file_name(request.original_file)}-split-*.pdf")
+        files = list(map(lambda x: os.path.basename(x), files))
+
+        if not files:
+            files = []
+        return files
 
 
 @app.post("/split_pdf")
@@ -110,16 +129,16 @@ async def split_pdf(request: SplitRequest) -> SplitResponse:
     try:
         return PdfSplitter().split_pdf(request)
     except Exception as e:
-        print(e)
-        raise HTTPException(status_code=400, detail=str(e))
+        traceback.print_tb(e.__traceback__)
+        raise HTTPException(status_code=400, detail=str(traceback.format_exception(e)))
 
 @app.post("/remainder_file_path")
-async def remainder_file_path(request: RemainderRequest) -> str:
+async def remainder_file_path(request: RemainderRequest) -> RemainderResponse:
     try:
         return PdfSplitter().get_or_create_remainder_file_path(request)
     except Exception as e:
-        print(e)
-        raise HTTPException(status_code=400, detail=str(e))
+        traceback.print_tb(e.__traceback__)
+        raise HTTPException(status_code=400, detail=str(traceback.format_exception(e)))
 
 if __name__ == "__main__":
     uvicorn.run(app, host="localhost", port=8090)
