@@ -13,16 +13,55 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
+    - name: Setup Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build npm app
+      run: npm run build:prod
+
+
     - name: Setup Miniconda
       uses: conda-incubator/setup-miniconda@v2
       with:
         auto-update-conda: true
-        python-version: 3.11
+        python-version: '3.11'
+        environment-file: conda_environment.yml
+        activate-environment: pdfsplitter_rest_api
 
-    - name: Run build script
-      shell: pwsh
+    - name: Verify environment
+      shell: bash -l {0}
       run: |
-        .\build.ps1
+        conda info --all
+        conda list        
+
+    - name: Run PyInstaller
+      shell: bash -l {0}
+      run: |
+        pyinstaller src/rest_api.py --distpath python_dist --noconfirm --onefile
+
+    - name: Create dist/bin directory
+      run: New-Item -ItemType Directory -Force -Path dist/bin
+      shell: pwsh
+
+    - name: Copy rest_api.exe to dist/bin
+      run: Copy-Item python_dist/rest_api.exe dist/bin/rest_api.exe
+      shell: pwsh
+
+    - name: Setup Node.js for Electron
+      uses: actions/setup-node@v2
+      with:
+        node-version: '18'
+
+    - name: Install Electron dependencies
+      run: npm ci
+
+    - name: Build Electron app
+      run: npx electron-builder build --publish=never --win
 
     - name: Publish artifact
       uses: actions/upload-artifact@v2
