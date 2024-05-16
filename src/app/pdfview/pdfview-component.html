@@ -1,0 +1,53 @@
+<!--<div style="border: black 1px solid; height: 96vh;display: flex; justify-content: center; align-items: center;">-->
+<div style="height: 96vh; width: 98%">
+    <div *ngIf="pdfPath; else selectOutputDirectory">
+        <div style="padding: 10px">
+            <span style="font-weight: bold; padding-right: 5px">Original PDF:</span><span style="font-style: italic">{{getNormalizedPdfPath()}}</span>
+        </div>
+        <div  style="text-align: center; margin-bottom: 20px; height: 2vh">
+            <button style="margin-right: 2px; height: 30px; width:30px" (click)="prevPage()" [disabled]="page === 1">
+                <fa-icon style="justify-content: center" [fixedWidth]="true" [icon]="faArrowLeft"></fa-icon>
+            </button>
+
+            <span style="padding-left: 2px; padding-right: 2px; height: 30px">{{ page }} / {{ totalPages }}</span>
+            <button style="margin-left: 2px; height: 30px; width:30px" (click)="nextPage()"
+                    [disabled]="page === totalPages">
+                <fa-icon style="justify-content: center" [fixedWidth]="true" [icon]="faArrowRight"></fa-icon>
+            </button>
+        </div>
+
+<!--        <div #pdfContainer>
+            <pdf-viewer style="height: 90vh; width: 70vw;" [src]="remainderPath" [render-text]="true"
+                        [show-all]="false"
+                        [fit-to-page]="true"
+                        [page]="page"
+                        (after-load-complete)="afterLoadComplete($event)"
+
+            ></pdf-viewer>
+        </div>-->
+
+        <div>
+            <pdf-viewer
+                    style="height: 90vh; width: 70vw;"
+                    [src]="remainderPath"
+                    [render-text]="true"
+                    [show-all]="false"
+                    [fit-to-page]="true"
+                    [page]="page"
+                    (after-load-complete)="afterLoadComplete($event)"
+            ></pdf-viewer>
+        </div>
+
+    </div>
+    <ng-template #selectOutputDirectory>
+        <div style="display: grid; grid-template-columns: auto; width: 100%;padding: 10px;">
+            <div style="font-style: italic">Please select a file under <span style="font-weight: bold">File > Open</span> or use <span  style="font-weight: bold"> Ctrl+O</span> !</div>
+
+        </div>
+
+
+    </ng-template>
+
+
+</div>
+

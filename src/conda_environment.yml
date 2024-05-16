@@ -1,0 +1,11 @@
+name: pdfsplitter_rest_api
+channels:
+  - defaults
+dependencies:
+  - uvicorn=0.20.0
+  - fastapi=0.103.0
+  - pydantic=2.5.3
+  - pip
+  - pip:
+      - pypdf2==3.0.1
+      - pyinstaller==6.6.0

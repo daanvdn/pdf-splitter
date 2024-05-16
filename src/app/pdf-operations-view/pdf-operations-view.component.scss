@@ -1,0 +1,16 @@
+#parent {
+  display: grid;
+  grid-template-columns: auto; /* Define one column with auto size */
+  align-items: center; /* Center items along the cross-axis (vertical centering) */
+  justify-content: center; /* Center items along the main axis (horizontal centering) */
+}
+
+#first {
+  padding: 5px;
+  text-align: center; /* Center text horizontally within #first */
+}
+
+#second {
+  border: 1px solid black; /* Add outline to #second */
+  padding: 5px;
+}
