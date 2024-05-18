@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - develop
+      - master
 
 jobs:
   build:
@@ -63,8 +64,12 @@ jobs:
     - name: Build Electron app
       run: npx electron-builder build --publish=never --win
 
+    - name: Get version
+      id: packagejson
+      uses: martinbeentjes/npm-get-version-action@master
+
     - name: Publish artifact
       uses: actions/upload-artifact@v2
       with:
         name: PDFSplitter
-        path: release/PDF Splitter 1.0.0.msi
+        path: release/PDF Splitter ${{ steps.packagejson.outputs.current-version }}.msi

@@ -1,7 +1,7 @@
 {
   "name": "pdf-splitter",
   "version": "1.0.0",
-  "description": " Simple Desktop app to splt a PDF file. Built with Angular 16 and  Electron 25 (Typescript + SASS + Hot Reload)",
+  "description": " Simple Desktop app to split a PDF file. Built with Angular 16 and  Electron 25 (Typescript + SASS + Hot Reload)",
   "homepage": "https://github.com/daanvdn/pdf-splitter",
   "author": {
     "name": "Daan Van den Nest",

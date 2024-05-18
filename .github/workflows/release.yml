@@ -62,11 +62,15 @@ jobs:
       - name: Build Electron app
         run: npx electron-builder build --publish=never --win
 
+      - name: Get version
+        id: packagejson
+        uses: martinbeentjes/npm-get-version-action@master
+
       - name: Publish artifact
         uses: actions/upload-artifact@v2
         with:
           name: PDFSplitter
-          path: release/PDF Splitter 1.0.0.msi
+          path: release/PDF Splitter ${{ steps.packagejson.outputs.current-version }}.msi
 
       - name: Create Release
         id: create_release
@@ -86,6 +90,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./release/PDF Splitter 1.0.0.msi
-          asset_name: PDF Splitter 1.0.0.msi
+          asset_path: ./release/PDF Splitter ${{ steps.packagejson.outputs.current-version }}.msi
+          asset_name: PDF Splitter ${{ steps.packagejson.outputs.current-version }}.msi
           asset_content_type: application/octet-stream
