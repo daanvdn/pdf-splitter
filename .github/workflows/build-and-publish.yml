@@ -3,7 +3,8 @@ name: Build and Publish Artifact
 on:
   push:
     branches:
-      - main
+      - develop
+      - master
 
 jobs:
   build:
@@ -63,8 +64,15 @@ jobs:
     - name: Build Electron app
       run: npx electron-builder build --publish=never --win
 
+    - name: Get version
+      id: packagejson
+      run: |
+        $json = Get-Content -Path ./package.json | ConvertFrom-Json
+        echo "::set-output name=version::$($json.version)"
+      shell: pwsh
+
     - name: Publish artifact
       uses: actions/upload-artifact@v2
       with:
         name: PDFSplitter
-        path: release/PDF Splitter 1.0.0.msi
+        path: release/PDF Splitter ${{ steps.packagejson.outputs.version }}.msi
