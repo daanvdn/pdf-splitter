@@ -36,21 +36,45 @@ The project is structured into several parts:
 
 This project uses Angular for the frontend and Electron for the desktop application. It also uses a Python script for the backend operations like splitting the PDF.
 
-To run the project locally, you need to have Node.js, npm, and Python installed on your machine. After cloning the repository, you can install the dependencies using npm:
+To run the project locally, you need to have Node.js, npm, and Python installed on your machine. After cloning the repository, you can install the node dependencies using npm:
 
 ```powershell
 npm install
 ```
-Then, you can start the application in development mode with:
+Then, you can start the frontend application in development mode with:
 
 ```powershell
-npm start
+npm run start
 ```
+
+For the python backend, create a conda virtual environment and install the dependencies:
+
+```powershell
+conda env create --file conda_environment.yml
+```
+
+Activate the conda environment:
+
+```powershell
+conda activate pdfsplitter_rest_api
+```
+
+To start the Python backend, run the following command:
+
+```powershell
+python rest_api.py
+```
+
 
 ## Building
 
-The project uses GitHub Actions for building and releasing the application. The workflow is defined in .github/workflows/release.yml. It builds the application for Windows using Electron Builder and PyInstaller to package the Python rest api as an exe.
+The project uses GitHub Actions for building and releasing the application. The workflow is defined in [release.yml](.github/workflows/release.yml). It builds the application for Windows using Electron Builder and PyInstaller to package the Python rest api as an exe.
 
+To build the application locally, you can run the following command:
+
+```powershell
+\.build_locally.ps1
+```
 
 ## License
 This project is licensed under the MIT License.
