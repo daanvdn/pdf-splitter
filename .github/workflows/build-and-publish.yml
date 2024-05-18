@@ -66,10 +66,13 @@ jobs:
 
     - name: Get version
       id: packagejson
-      uses: martinbeentjes/npm-get-version-action@master
+      run: |
+        $json = Get-Content -Path ./package.json | ConvertFrom-Json
+        echo "::set-output name=version::$($json.version)"
+      shell: pwsh
 
     - name: Publish artifact
       uses: actions/upload-artifact@v2
       with:
         name: PDFSplitter
-        path: release/PDF Splitter ${{ steps.packagejson.outputs.current-version }}.msi
+        path: release/PDF Splitter ${{ steps.packagejson.outputs.version }}.msi
